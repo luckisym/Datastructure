@@ -19,7 +19,7 @@
  *  - true if the given position has been visited
  *  - false if it hasnt
 */
-bool has_been_visited(int *visited, int n, int pos) {
+bool contains_index(int *visited, int n, int pos) {
     for (int i = 0; i < n; i++) {
         if (visited[i] == pos) {
             return true; 
@@ -29,29 +29,60 @@ bool has_been_visited(int *visited, int n, int pos) {
     return false; 
 }
 
-/**
+/** Check for the next possible position in the maze
  * 
+ * in:
+ *  - visited: Array of visited positions
+ *  - size: size of the array "visited"
+ *  - m: the maze 
+ *  - x: x coordinate 
+ *  - y: y coordinate
  * return the index of the next possible node, if there are none return -1. 
 */
 int next_possible_pos(int *visited, int size, struct maze *m ,int x, int y) {
+    int i_right = maze_index(m, x + 1, y);
+    int i_left = maze_index(m, x - 1, y);
+    int i_down = maze_index(m, x, y + 1); 
+    int i_up = maze_index(m, x, y - 1); 
 
     // Check every direction: right, left, up and down
-    if (maze_valid_move(m, x + 1, y) && 
-        !has_been_visited(visited, size, maze_index(m, x + 1, y))) {
-        return maze_index(m, x + 1, y); 
-    } else if (maze_valid_move(m, x - 1, y) && 
-               !has_been_visited(visited, size, maze_index(m, x + 1, y))) {
-        return maze_index(m, x - 1, y); 
-    } else if (maze_valid_move(m, x, y + 1) && 
-               !has_been_visited(visited, size, maze_index(m, x + 1, y))) {
-        return maze_index(m, x, y + 1); 
-    } else if (maze_valid_move(m, x, y - 1) && 
-               !has_been_visited(visited, size, maze_index(m, x + 1, y))) {
-        return maze_index(m, x, y - 1); 
+    if (maze_valid_move(m, x + 1, y) && maze_get(m, x + 1, y) != WALL &&
+        !contains_index(visited, size, i_right)) {
+        return i_right; 
+    } else if (maze_valid_move(m, x - 1, y) && maze_get(m, x - 1, y) != WALL &&
+               !contains_index(visited, size, i_left)) {
+        return i_left; 
+    } else if (maze_valid_move(m, x, y + 1) && maze_get(m, x, y + 1) != WALL &&
+               !contains_index(visited, size, i_down)) {
+        return i_down; 
+    } else if (maze_valid_move(m, x, y - 1) && maze_get(m, x, y -1) != WALL &&
+               !contains_index(visited, size, i_up)) {
+        return i_up; 
     }
 
     return -1; 
     
+}
+
+/** Marks the path to end while backtracking and return the length
+ * 
+*/
+int path_to_end(struct maze *m, struct stack *stack) {
+    size_t size = stack_size(stack); 
+    int length = 0; 
+    
+    for (size_t i = 0; i < size; i++) {
+        int current_pos = stack_pop(stack); 
+        int x = maze_row(m, current_pos); 
+        int y = maze_col(m, current_pos); 
+        maze_set(m, x, y, PATH); 
+
+        if (!maze_at_destination(m, x, y)) {
+            length++;  
+        }
+    }
+    
+    return length; 
 }
 /* Solves the maze m.
  * Returns the length of the path if a path is found.
@@ -59,7 +90,7 @@ int next_possible_pos(int *visited, int size, struct maze *m ,int x, int y) {
  */
 int dfs_solve(struct maze *m) {
     struct stack *stack = stack_init(5000); 
-    int size = maze_size(m) * 2;
+    int size = maze_size(m) * 10;
     int visited[size]; 
     int x = 0; 
     int y = 0; 
@@ -73,7 +104,7 @@ int dfs_solve(struct maze *m) {
     while (1) {
         if (path_length == size) {
             stack_cleanup(stack); 
-            return NOT_FOUND; 
+            return ERROR; 
         }
 
         if (stack_empty(stack)) {
@@ -85,24 +116,25 @@ int dfs_solve(struct maze *m) {
         
         visited[path_length] = pos; 
 
-        x = maze_col(m, pos); 
-        y = maze_row(m, pos); 
+        y = maze_col(m, pos); 
+        x = maze_row(m, pos); 
 
         if (maze_at_destination(m, x, y)) {
+            int length = path_to_end(m, stack); 
             stack_cleanup(stack); 
-            return path_length; 
+            return length; 
         }
         
         int next_pos = next_possible_pos(visited, size, m, x, y); 
-
+        
         // Nothing found 
         if (next_pos == NOT_FOUND) {
             stack_pop(stack); 
-        } else {
+        } else { 
             stack_push(stack, next_pos); 
         }
 
-        path_length++; 
+        path_length++;
     }
 }
 

@@ -15,8 +15,6 @@ struct stack *stack_init(size_t capacity) {
     struct stack *s = malloc(sizeof(struct stack));
 
     if (s == NULL) {
-        free(s);
-        perror("Error: "); // TODO: goede error message
         return NULL; 
     }
 
@@ -27,8 +25,7 @@ struct stack *stack_init(size_t capacity) {
     s->push_count = 0; 
 
     if (s->data == NULL) {
-        free(s->data);
-        perror("Error: "); // TODO: goede error message
+        free(s);
         return NULL; 
     }
     

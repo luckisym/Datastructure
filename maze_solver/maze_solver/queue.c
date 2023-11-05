@@ -16,8 +16,6 @@ struct queue *queue_init(size_t capacity) {
     struct queue *q = malloc(sizeof(struct queue));
 
     if (q == NULL) {
-        free(q);
-        perror("Error: "); // TODO: goede error message
         return NULL; 
     }
 
@@ -27,8 +25,7 @@ struct queue *queue_init(size_t capacity) {
     q->capacity = capacity;
 
     if (q->data == NULL) {
-        free(q->data);
-        perror("Error: "); // TODO: goede error message
+        free(q);
         return NULL; 
     }
     
@@ -45,7 +42,11 @@ void queue_cleanup(struct queue *q) {
 }
 
 void queue_stats(const struct queue *q) {
-    
+    if (q == NULL) {
+        return;  
+    }
+
+    fprintf(stderr, "stats: %d %d %ld", q->push_count, q->pop_count, q->capacity);
 }
 
 int queue_push(struct queue *q, int e) {
@@ -112,7 +113,7 @@ size_t queue_size(const struct queue *q) {
 
     size_t size; 
 
-    if (q->front > q->rear) {
+    if (q->front > q->rear || q->front == q->rear) {
         size = (size_t) ((q->front - q->rear) + 1); 
     } else if (q->rear > q->front) {
         size = (size_t) ((q->rear - q->front) + 1); 
