@@ -89,12 +89,17 @@ int path_to_end(struct maze *m, struct stack *stack) {
  * Returns NOT_FOUND if no path is found and ERROR if an error occured.
  */
 int dfs_solve(struct maze *m) {
-    struct stack *stack = stack_init(5000); 
-    int size = maze_size(m) * 10;
+    struct stack *stack = stack_init(50000); 
+    int size = maze_size(m) * 100;
     int visited[size]; 
     int x = 0; 
     int y = 0; 
     int path_length = 0; 
+
+
+    for (int i = 0; i < size; i++) {
+        visited[i] = -1;
+    }
 
     maze_start(m, &x, &y); 
 

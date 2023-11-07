@@ -9,6 +9,7 @@ struct stack {
     size_t capacity;
     int push_count; 
     int pop_count; 
+    int max_elements;
 };
 
 struct stack *stack_init(size_t capacity) {
@@ -18,6 +19,7 @@ struct stack *stack_init(size_t capacity) {
         return NULL; 
     }
 
+    s->max_elements = 0; 
     s->pos = -1; 
     s->data = (int *)malloc(sizeof(int) * capacity);
     s->capacity = capacity;
@@ -61,6 +63,11 @@ int stack_push(struct stack *s, int c) {
     s->pos++;
     s->data[s->pos] = c;
     s->push_count++; 
+
+    if (stack_size(s) >  s->max_elements)  {
+        s->max_elements = stack_size(s);
+    }
+    
     return 0;
 }
 

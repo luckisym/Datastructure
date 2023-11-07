@@ -7,6 +7,7 @@
 
 #define NOT_FOUND -1
 #define ERROR -2
+#define QUEUE_SIZE 100000
 
 /**Checks if the given position has been visited before 
  * 
@@ -33,52 +34,54 @@ bool contains_index(int *array, int n, int pos) {
  * 
  * return the index of the next possible node, if there are none return -1. 
 */
-void enqueue_possible_pos(struct queue *queue, int *visited, int size, int *elements_queue, 
-                          struct maze *m ,int x, int y, int i, int *previous) {
-    
-    int i_right = maze_index(m, x + 1, y);
-    int i_left = maze_index(m, x - 1, y);
-    int i_down = maze_index(m, x, y + 1); 
-    int i_up = maze_index(m, x, y - 1); 
+void enqueue_possible_pos(struct maze *m, struct queue *queue, int *visited, int *queue_elmts,
+                          int *previous, int size, int x, int y) {
+    int pos = maze_index(m, x, y); 
+    int directions[N_MOVES] = {maze_index(m, x - 1, y), maze_index(m, x, y + 1), 
+                               maze_index(m, x + 1, y), maze_index(m, x, y - 1)}; 
 
-    int offset = 0; 
+    for (int i = 0; i < N_MOVES; i++) {
+        int new_x = x + m_offsets[i][0]; 
+        int new_y = y + m_offsets[i][1];
 
-    // Check every direction: right, left, up and down
-    if (maze_valid_move(m, x + 1, y) && maze_get(m, x + 1, y) != WALL 
-        && !contains_index(visited, size, i_right)
-        && !contains_index(elements_queue, size, i_right)) {
-        queue_push(queue, i_right);
-        elements_queue[i] = i_right;
-        previous[i_right] = maze_index(m, x, y);
-        offset++;   
+        if (maze_valid_move(m, new_x, new_y) 
+            && maze_get(m, new_x, new_y) != WALL 
+            && !contains_index(visited, size, directions[i])
+            && !contains_index(queue_elmts, size, directions[i])) {
+            queue_push(queue, directions[i]);
+            queue_elmts[pos + i] = directions[i];
+            previous[directions[i]] = pos;   
+        }
+    }
+}
+
+int backtrack_to_exit(struct maze *m, int *previous, int pos, int m_size) {
+    int current = pos;
+    int shortest_path[m_size];
+    int path_length = 0;
+    int i_a = 0;
+
+    while (current != -1)  {
+        shortest_path[i_a] = current;
+        current = previous[current];
+
+        int y = maze_col(m, current);
+        int x = maze_row(m, current);
+
+        if (!maze_at_start(m, x, y)) {
+            path_length++;
+        }
+        i_a++;
     }
 
-    if (maze_valid_move(m, x - 1, y) && maze_get(m, x - 1, y) != WALL 
-        && !contains_index(visited, size, i_left)
-        && !contains_index(elements_queue, size, i_left)) {
-        queue_push(queue, i_left); 
-        elements_queue[i + offset] = i_left; 
-        previous[i_left] = maze_index(m, x, y); 
-        offset++; 
-    } 
-    
-    if (maze_valid_move(m, x, y + 1) && maze_get(m, x, y + 1) != WALL 
-        && !contains_index(visited, size, i_down)
-        && !contains_index(elements_queue, size, i_down)) {
-        queue_push(queue, i_down); 
-        elements_queue[i + offset] = i_down;  
-        previous[i_down] = maze_index(m, x, y);
-        offset++; 
+    for (int i = 0; i < i_a; i++) {
+        int path_pos = shortest_path[i];
+        int path_y = maze_col(m, path_pos);
+        int path_x = maze_row(m, path_pos);
+        maze_set(m, path_x, path_y, PATH);
     }
-    
-    if (maze_valid_move(m, x, y - 1) && maze_get(m, x, y - 1) != WALL 
-        && !contains_index(visited, size, i_up)
-        && !contains_index(elements_queue, size, i_up)) {
-        queue_push(queue, i_up); 
-        elements_queue[i + offset] = i_up;  
-        previous[i_up] = maze_index(m, x, y);
-        offset++; 
-    }
+
+    return path_length; 
 }
 
 /* Solves the maze m.
@@ -86,17 +89,15 @@ void enqueue_possible_pos(struct queue *queue, int *visited, int size, int *elem
  * Returns NOT_FOUND if no path is found and ERROR if an error occured.
  */
 int bfs_solve(struct maze *m) {
-    struct queue *queue = queue_init(5000); 
-    int m_size = maze_size(m) * 10;
-    int visited[m_size]; 
-    int elements_queue[m_size]; 
-    int previous[m_size * 20]; 
-    int x = 0; 
-    int y = 0; 
-    int path_length = 0; 
+    struct queue *queue = queue_init(50000); 
+    int size = maze_size(m) * 100;
+    int visited[size], queue_elmts[size], previous[size]; 
+    int x = 0, y = 0, index = 0; 
 
-    for (int i = 0; i < m_size; i++) {
-        previous[i] = -1; // Initialize to -1 (invalid position)
+    for (int i = 0; i < size; i++) {
+        previous[i] = -1;
+        visited[i] = -1;
+        queue_elmts[i] = -1;
     }
 
     maze_start(m, &x, &y); 
@@ -105,7 +106,7 @@ int bfs_solve(struct maze *m) {
     queue_push(queue, pos); 
 
     while (1) {
-        if (path_length == m_size) {
+        if (index == size) {
             queue_cleanup(queue); 
             return ERROR; 
         }
@@ -117,43 +118,19 @@ int bfs_solve(struct maze *m) {
 
         pos = queue_pop(queue);
         
-        visited[path_length] = pos; 
+        visited[index] = pos; 
 
-        y = maze_col(m, pos); 
         x = maze_row(m, pos); 
+        y = maze_col(m, pos); 
 
         if (maze_at_destination(m, x, y)) {
-            int current = pos;
-            int shortest_path[m_size];
-            int path_length = 0;
-            int length = 0;
-
-            while (current != -1) {
-                shortest_path[length] = current;
-                current = previous[current]; 
-
-                int path_y = maze_col(m, current);
-                int path_x = maze_row(m, current);
-
-                if (!maze_at_start(m, path_x, path_y)) {
-                    path_length++;
-                }
-                length++;
-            }
-
-            for (int i = 0; i < length; i++) {
-                int path_pos = shortest_path[i];
-                int path_y = maze_col(m, path_pos);
-                int path_x = maze_row(m, path_pos);
-                maze_set(m, path_x, path_y, PATH); 
-            }
-            
+            int length = backtrack_to_exit(m, previous, pos, size); 
             queue_cleanup(queue); 
-            return path_length; 
+            return length; 
         }
         
-        enqueue_possible_pos(queue, visited, m_size, elements_queue, m, x, y, path_length, previous); 
-        path_length++; 
+        enqueue_possible_pos(m, queue, visited, queue_elmts, previous, size, x, y); 
+        index++; 
     }
 }
 
