@@ -4,6 +4,14 @@
    Education: Computer Science
 
    This is a C program that implements a queue data structure with various queue operations.
+   A queue is a fundamental data structure in computer science that follows the "first-in, 
+   first-out" (FIFO) principle. It is similar to a real-world queue where the first person to enter 
+   the queue is the first to leave. In a queue data structure:
+
+    - Elements are added to the rear (enqueue operation).
+    - Elements are removed from the front (dequeue operation).
+    - It maintains the order in which elements were added, ensuring that the oldest element is 
+      always at the front.
 */
 
 #include <stdio.h>

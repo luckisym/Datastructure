@@ -2,8 +2,14 @@
    Name: Saleeman Mahamud
    Student Number: 14932458
    Education: Computer Science 
+   
+   A stack is another fundamental data structure in computer science, which follows the "last-in, 
+   first-out" (LIFO) principle. In a stack data structure:
 
-   This is a C program that implements a stack data structure with various stack operations.
+   - Elements are added and removed from the top of the stack.
+   - The last element added is the first one to be removed.
+   - Stacks are often visualized as a vertical structure where items are stacked on top of each 
+     other.
 */
 
 #include <stdio.h>
