@@ -16,7 +16,7 @@
 
 #define NOT_FOUND -1
 #define ERROR -2
-#define QUEUE_SIZE 5000
+#define MAX_Q_SIZE 5000
 
 
 /** Add every possible position to the queue so it can be visited later
@@ -103,7 +103,11 @@ int backtrack_to_des(struct maze *m, int *parent, size_t array_size, int pos) {
  * Returns NOT_FOUND if no path is found and ERROR if an error occured.
  */
 int bfs_solve(struct maze *m) {
-    struct queue *queue = queue_init(QUEUE_SIZE); 
+    struct queue *queue = queue_init(MAX_Q_SIZE); 
+    if (queue == NULL) {
+        return ERROR;
+    }
+    
     size_t size = (size_t) (maze_size(m) * maze_size(m));
     int parent[size]; 
     int x = 0, y = 0, index = 0; 
@@ -118,16 +122,15 @@ int bfs_solve(struct maze *m) {
     queue_push(queue, pos); 
   
     while (1) {
-        if (queue_size(queue) >= size) {
-            queue_cleanup(queue); 
-            return ERROR; 
-        }
 
         if (queue_empty(queue)) {
             queue_cleanup(queue); 
             return NOT_FOUND; 
+        } else if (queue_size(queue) > MAX_Q_SIZE) {
+            queue_cleanup(queue); 
+            return ERROR; 
         }
-
+        
         pos = queue_pop(queue);
 
         x = maze_row(m, pos); 

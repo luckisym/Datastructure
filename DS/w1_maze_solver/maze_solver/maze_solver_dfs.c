@@ -16,13 +16,12 @@
 
 #define NOT_FOUND -1
 #define ERROR -2
+#define MAX_S_SIZE 50000
 
 
 /** Check for the next possible position in the maze
  * 
  * in:
- *  - visited: Array of visited positions
- *  - size: size of the array "visited"
  *  - m: the maze 
  *  - x: x coordinate 
  *  - y: y coordinate
@@ -80,7 +79,10 @@ int backtrack_to_des(struct maze *m, struct stack *stack) {
  * Returns NOT_FOUND if no path is found and ERROR if an error occured.
  */
 int dfs_solve(struct maze *m) {
-    struct stack *stack = stack_init(50000); 
+    struct stack *stack = stack_init(MAX_S_SIZE);     
+    if (stack == NULL) {
+        return ERROR;
+    }
     int x = 0; 
     int y = 0; 
     int steps = 0; 
@@ -91,9 +93,13 @@ int dfs_solve(struct maze *m) {
     stack_push(stack, pos); 
 
     while (1) {
+
         if (stack_empty(stack)) {
             stack_cleanup(stack); 
-            return ERROR; 
+            return NOT_FOUND; 
+        } else if (stack_size(stack) > MAX_S_SIZE) {
+            stack_cleanup(stack); 
+            return NOT_FOUND; 
         }
         
         pos = stack_peek(stack);
