@@ -31,9 +31,6 @@
  *  - next possible position in the maze
 */
 int next_possible_pos(struct maze *m ,int x, int y) {
-    int directions[N_MOVES] = {maze_index(m, x - 1, y), maze_index(m, x, y + 1), 
-                               maze_index(m, x + 1, y), maze_index(m, x, y - 1)};
-
     for (int i = 0; i < N_MOVES; i++) {
         int new_x = x + m_offsets[i][0];
         int new_y = y + m_offsets[i][1];
@@ -41,7 +38,7 @@ int next_possible_pos(struct maze *m ,int x, int y) {
         //Check if the position is valid 
         if (maze_valid_move(m, new_x, new_y) && maze_get(m, new_x, new_y) != WALL &&
             maze_get(m, new_x, new_y) != VISITED) {
-            return directions[i]; 
+            return maze_index(m, new_x, new_y); 
         } 
     }
 
