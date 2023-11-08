@@ -93,13 +93,12 @@ int dfs_solve(struct maze *m) {
     stack_push(stack, pos); 
 
     while (1) {
-
         if (stack_empty(stack)) {
             stack_cleanup(stack); 
             return NOT_FOUND; 
         } else if (stack_size(stack) > MAX_S_SIZE) {
             stack_cleanup(stack); 
-            return NOT_FOUND; 
+            return ERROR; 
         }
         
         pos = stack_peek(stack);

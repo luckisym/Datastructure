@@ -122,7 +122,6 @@ int bfs_solve(struct maze *m) {
     queue_push(queue, pos); 
   
     while (1) {
-
         if (queue_empty(queue)) {
             queue_cleanup(queue); 
             return NOT_FOUND; 
@@ -143,7 +142,7 @@ int bfs_solve(struct maze *m) {
             queue_cleanup(queue); 
             return length; 
         }
-        
+    
         enqueue_possible_pos(m, queue, parent, x, y); 
         index++; 
     }
