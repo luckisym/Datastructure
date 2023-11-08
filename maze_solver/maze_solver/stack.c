@@ -1,3 +1,11 @@
+/* 
+   Name: Saleeman Mahamud
+   Student Number: 14932458
+   Education: Computer Science 
+
+   This is a C program that implements a stack data structure with various stack operations.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -9,7 +17,7 @@ struct stack {
     size_t capacity;
     int push_count; 
     int pop_count; 
-    int max_elements;
+    size_t max_elements;
 };
 
 struct stack *stack_init(size_t capacity) {
@@ -48,7 +56,7 @@ void stack_stats(const struct stack *s) {
         return;  
     }
 
-    fprintf(stderr, "stats: %d %d %ld", s->push_count, s->pop_count, s->capacity);
+    fprintf(stderr, "stats %d %d %ld\n", s->push_count, s->pop_count, s->max_elements);
 }
 
 int stack_push(struct stack *s, int c) { 

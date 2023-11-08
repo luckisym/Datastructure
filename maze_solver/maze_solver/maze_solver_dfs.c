@@ -1,3 +1,12 @@
+/* 
+   Name: Saleeman Mahamud
+   Student Number: 14932458
+   Study: Computer Science
+
+   This C program solves a maze using depth-first search (DFS) and marks the path. 
+   It reads a maze, finds a path from the start to the destination, and prints the result.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -8,26 +17,6 @@
 #define NOT_FOUND -1
 #define ERROR -2
 
-/**Checks if the given position has been visited before 
- * 
- * in:
- *  - visited: array of visited positions
- *  - n: size of the array 
- *  - pos: current position to be checked 
- * 
- * out:
- *  - true if the given position has been visited
- *  - false if it hasnt
-*/
-bool contains_index(int *visited, int n, int pos) {
-    for (int i = 0; i < n; i++) {
-        if (visited[i] == pos) {
-            return true; 
-        }
-    }
-    
-    return false; 
-}
 
 /** Check for the next possible position in the maze
  * 
@@ -39,35 +28,38 @@ bool contains_index(int *visited, int n, int pos) {
  *  - y: y coordinate
  * return the index of the next possible node, if there are none return -1. 
 */
-int next_possible_pos(int *visited, int size, struct maze *m ,int x, int y) {
-    int i_right = maze_index(m, x + 1, y);
-    int i_left = maze_index(m, x - 1, y);
-    int i_down = maze_index(m, x, y + 1); 
-    int i_up = maze_index(m, x, y - 1); 
+int next_possible_pos(struct maze *m ,int x, int y) {
+    int directions[N_MOVES] = {maze_index(m, x - 1, y), maze_index(m, x, y + 1), 
+                               maze_index(m, x + 1, y), maze_index(m, x, y - 1)};
 
-    // Check every direction: right, left, up and down
-    if (maze_valid_move(m, x + 1, y) && maze_get(m, x + 1, y) != WALL &&
-        !contains_index(visited, size, i_right)) {
-        return i_right; 
-    } else if (maze_valid_move(m, x - 1, y) && maze_get(m, x - 1, y) != WALL &&
-               !contains_index(visited, size, i_left)) {
-        return i_left; 
-    } else if (maze_valid_move(m, x, y + 1) && maze_get(m, x, y + 1) != WALL &&
-               !contains_index(visited, size, i_down)) {
-        return i_down; 
-    } else if (maze_valid_move(m, x, y - 1) && maze_get(m, x, y -1) != WALL &&
-               !contains_index(visited, size, i_up)) {
-        return i_up; 
+    for (int i = 0; i < N_MOVES; i++) {
+        int new_x = x + m_offsets[i][0];
+        int new_y = y + m_offsets[i][1];
+
+        //Check if the position is valid 
+        if (maze_valid_move(m, new_x, new_y) && maze_get(m, new_x, new_y) != WALL &&
+            maze_get(m, new_x, new_y) != VISITED) {
+            return directions[i]; 
+        } 
     }
 
     return -1; 
     
 }
 
-/** Marks the path to end while backtracking and return the length
+/**Backtracks to the destination and marks the path 
  * 
+ * in:
+ *  - m: the maze
+ *  - stack: the stack 
+ * 
+ * out:
+ *  - the length of the path taken back to the destination
+ * 
+ * side effects:
+ *  - changes the maze layout 
 */
-int path_to_end(struct maze *m, struct stack *stack) {
+int backtrack_to_des(struct maze *m, struct stack *stack) {
     size_t size = stack_size(stack); 
     int length = 0; 
     
@@ -90,16 +82,9 @@ int path_to_end(struct maze *m, struct stack *stack) {
  */
 int dfs_solve(struct maze *m) {
     struct stack *stack = stack_init(50000); 
-    int size = maze_size(m) * 100;
-    int visited[size]; 
     int x = 0; 
     int y = 0; 
-    int path_length = 0; 
-
-
-    for (int i = 0; i < size; i++) {
-        visited[i] = -1;
-    }
+    int steps = 0; 
 
     maze_start(m, &x, &y); 
 
@@ -107,30 +92,25 @@ int dfs_solve(struct maze *m) {
     stack_push(stack, pos); 
 
     while (1) {
-        if (path_length == size) {
-            stack_cleanup(stack); 
-            return ERROR; 
-        }
-
         if (stack_empty(stack)) {
             stack_cleanup(stack); 
-            return NOT_FOUND; 
+            return ERROR; 
         }
         
         pos = stack_peek(stack);
         
-        visited[path_length] = pos; 
-
         y = maze_col(m, pos); 
         x = maze_row(m, pos); 
 
+        maze_set(m, x, y, VISITED);
+
         if (maze_at_destination(m, x, y)) {
-            int length = path_to_end(m, stack); 
+            int length = backtrack_to_des(m, stack); 
             stack_cleanup(stack); 
             return length; 
         }
         
-        int next_pos = next_possible_pos(visited, size, m, x, y); 
+        int next_pos = next_possible_pos(m, x, y); 
         
         // Nothing found 
         if (next_pos == NOT_FOUND) {
@@ -139,7 +119,7 @@ int dfs_solve(struct maze *m) {
             stack_push(stack, next_pos); 
         }
 
-        path_length++;
+        steps++;
     }
 }
 

@@ -1,3 +1,11 @@
+/* 
+   Name: Saleeman Mahamud
+   Student Number: 14932458
+   Education: Computer Science
+
+   This is a C program that implements a queue data structure with various queue operations.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -10,6 +18,7 @@ struct queue {
     size_t capacity;
     int push_count; 
     int pop_count; 
+    size_t max_elements;
 };
 
 struct queue *queue_init(size_t capacity) {
@@ -19,6 +28,9 @@ struct queue *queue_init(size_t capacity) {
         return NULL; 
     }
 
+    q->max_elements = 0;
+    q->push_count = 0;
+    q-> pop_count = 0;
     q->front = -1; 
     q->rear = -1; 
     q->data = (int *)malloc(sizeof(int) * capacity);
@@ -46,13 +58,15 @@ void queue_stats(const struct queue *q) {
         return;  
     }
 
-    fprintf(stderr, "stats: %d %d %ld", q->push_count, q->pop_count, q->capacity);
+    fprintf(stderr, "stats %d %d %ld\n", q->push_count, q->pop_count, q->max_elements);
 }
 
 int queue_push(struct queue *q, int e) {
     if (q == NULL || ((q->rear + 1) % (int) q->capacity) == q->front) {
         return 1;  
     }
+
+    size_t size; 
 
     if (queue_empty(q)) {
         q->rear = 0; 
@@ -65,6 +79,12 @@ int queue_push(struct queue *q, int e) {
     }
     
     q->push_count++; 
+
+    size = queue_size(q);
+
+    if ( size >  q->max_elements)  {
+        q->max_elements = size;
+    }
 
     return 0;
 }

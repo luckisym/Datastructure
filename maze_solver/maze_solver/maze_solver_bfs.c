@@ -1,3 +1,12 @@
+/* 
+   Name: Saleeman Mahamud
+   Student Number: 14932458
+   Study: Computer Science
+
+   This C program solves a maze using breadth-first search (BFS) and marks the path. 
+   It reads a maze, finds a path from the start to the destination, and prints the result.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -7,35 +16,23 @@
 
 #define NOT_FOUND -1
 #define ERROR -2
-#define QUEUE_SIZE 100000
+#define QUEUE_SIZE 5000
 
-/**Checks if the given position has been visited before 
+
+/** Add every possible position to the queue so it can be visited later
  * 
  * in:
- *  - visited: array of visited positions
- *  - n: size of the array 
- *  - pos: current position to be checked 
+ *  - m: the maze
+ *  - queue: the queue
+ *  - parent: array containing every parent of every position
+ *  - x: current x coordinate 
+ *  - y: current y coordinate 
  * 
- * out:
- *  - true if the given position has been visited
- *  - false if it hasnt
+ * side effects:
+ *  - pushes every possible position onto the queue
+ *  - changes the parent array 
 */
-bool contains_index(int *array, int n, int pos) {
-    for (int i = 0; i < n; i++) {
-        if (array[i] == pos) {
-            return true; 
-        }
-    }
-    
-    return false; 
-}
-
-/**
- * 
- * return the index of the next possible node, if there are none return -1. 
-*/
-void enqueue_possible_pos(struct maze *m, struct queue *queue, int *visited, int *queue_elmts,
-                          int *previous, int size, int x, int y) {
+void enqueue_possible_pos(struct maze *m, struct queue *queue, int *parent, int x, int y) {
     int pos = maze_index(m, x, y); 
     int directions[N_MOVES] = {maze_index(m, x - 1, y), maze_index(m, x, y + 1), 
                                maze_index(m, x + 1, y), maze_index(m, x, y - 1)}; 
@@ -46,39 +43,56 @@ void enqueue_possible_pos(struct maze *m, struct queue *queue, int *visited, int
 
         if (maze_valid_move(m, new_x, new_y) 
             && maze_get(m, new_x, new_y) != WALL 
-            && !contains_index(visited, size, directions[i])
-            && !contains_index(queue_elmts, size, directions[i])) {
+            && maze_get(m, new_x, new_y) != VISITED) {
+
             queue_push(queue, directions[i]);
-            queue_elmts[pos + i] = directions[i];
-            previous[directions[i]] = pos;   
+            parent[directions[i]] = pos;   
         }
     }
 }
 
-int backtrack_to_exit(struct maze *m, int *previous, int pos, int m_size) {
-    int current = pos;
-    int shortest_path[m_size];
+/**Backtracks to the destination using the parent array and marks the path 
+ * 
+ * in:
+ *  - m: the maze
+ *  - parent: array containing every parent of every position
+ *  - array_size: size of array parent 
+ *  - pos: current position in the maze
+ * 
+ * out:
+ *  - the length of the path taken back to the destination
+ * 
+ * side effects:
+ *  - changes the maze layout 
+*/
+int backtrack_to_des(struct maze *m, int *parent, size_t array_size, int pos) {
+    int current_pos = pos;
+    int shortest_path[array_size];
     int path_length = 0;
-    int i_a = 0;
+    int steps = 0;
 
-    while (current != -1)  {
-        shortest_path[i_a] = current;
-        current = previous[current];
+    // Follow the path, taken to the destination, back to the start and caluclate the path length 
+    while (current_pos != -1)  {
+        shortest_path[steps] = current_pos;
+        current_pos = parent[current_pos];
 
-        int y = maze_col(m, current);
-        int x = maze_row(m, current);
+        int y = maze_col(m, current_pos);
+        int x = maze_row(m, current_pos);
 
         if (!maze_at_start(m, x, y)) {
             path_length++;
         }
-        i_a++;
+        steps++;
     }
 
-    for (int i = 0; i < i_a; i++) {
-        int path_pos = shortest_path[i];
-        int path_y = maze_col(m, path_pos);
-        int path_x = maze_row(m, path_pos);
-        maze_set(m, path_x, path_y, PATH);
+    // Mark the path to the destination using the shortest_path array we just filled
+    for (int i = 0; i < steps; i++) {
+        current_pos = shortest_path[i];
+
+        int y = maze_col(m, current_pos);
+        int x = maze_row(m, current_pos);
+
+        maze_set(m, x, y, PATH);
     }
 
     return path_length; 
@@ -89,24 +103,22 @@ int backtrack_to_exit(struct maze *m, int *previous, int pos, int m_size) {
  * Returns NOT_FOUND if no path is found and ERROR if an error occured.
  */
 int bfs_solve(struct maze *m) {
-    struct queue *queue = queue_init(50000); 
-    int size = maze_size(m) * 100;
-    int visited[size], queue_elmts[size], previous[size]; 
+    struct queue *queue = queue_init(QUEUE_SIZE); 
+    size_t size = (size_t) (maze_size(m) * maze_size(m));
+    int parent[size]; 
     int x = 0, y = 0, index = 0; 
 
-    for (int i = 0; i < size; i++) {
-        previous[i] = -1;
-        visited[i] = -1;
-        queue_elmts[i] = -1;
+    for (size_t i = 0; i < size; i++) {
+        parent[i] = -1;
     }
 
     maze_start(m, &x, &y); 
 
     int pos = maze_index(m, x, y); 
     queue_push(queue, pos); 
-
+  
     while (1) {
-        if (index == size) {
+        if (queue_size(queue) >= size) {
             queue_cleanup(queue); 
             return ERROR; 
         }
@@ -117,19 +129,19 @@ int bfs_solve(struct maze *m) {
         }
 
         pos = queue_pop(queue);
-        
-        visited[index] = pos; 
 
         x = maze_row(m, pos); 
         y = maze_col(m, pos); 
 
+        maze_set(m, x, y, VISITED);
+
         if (maze_at_destination(m, x, y)) {
-            int length = backtrack_to_exit(m, previous, pos, size); 
+            int length = backtrack_to_des(m, parent, size, pos); 
             queue_cleanup(queue); 
             return length; 
         }
         
-        enqueue_possible_pos(m, queue, visited, queue_elmts, previous, size, x, y); 
+        enqueue_possible_pos(m, queue, parent, x, y); 
         index++; 
     }
 }
