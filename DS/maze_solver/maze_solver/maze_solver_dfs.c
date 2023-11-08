@@ -26,7 +26,9 @@
  *  - m: the maze 
  *  - x: x coordinate 
  *  - y: y coordinate
- * return the index of the next possible node, if there are none return -1. 
+ * 
+ * out:
+ *  - next possible position in the maze
 */
 int next_possible_pos(struct maze *m ,int x, int y) {
     int directions[N_MOVES] = {maze_index(m, x - 1, y), maze_index(m, x, y + 1), 
