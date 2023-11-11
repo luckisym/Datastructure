@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "list.h"
-#include "mysort.c"
+#include "mysort.h"
 #define BUF_SIZE 1024
 
 char buf[BUF_SIZE];
@@ -72,11 +72,11 @@ int main(int argc, char *argv[]) {
         int value;
         sscanf(buf, "%d", &value);
 
-        // Additional operations based on command line options
-        if (cfg.remove_odd && value % 2 != 0) {
-            // Skip odd numbers
-            continue;
-        }
+        // // Additional operations based on command line options
+        // if (cfg.remove_odd && value % 2 != 0) {
+        //     // Skip odd numbers
+        //     continue;
+        // }
 
         struct node *n = list_new_node(value); 
         list_add_back(mylist, n);
@@ -85,10 +85,11 @@ int main(int argc, char *argv[]) {
     // Sort the list based on command-line options
     if (cfg.combine) {
         if (cfg.descending_order) {
-            sort_descending(&mylist);
-        } else {
-            sort_ascending(&mylist);
-        }
+            sort_descending(mylist);
+        } 
+        //else {
+        //     sort_ascending(&mylist);
+        // }
     }
 
     // Print the sorted list

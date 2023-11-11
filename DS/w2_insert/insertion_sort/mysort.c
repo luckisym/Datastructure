@@ -1,31 +1,25 @@
 #include "list.h"
-#include "list.c"
+#include "mysort.h"
 
 void sort_descending(struct list *l) {
-    if (l == NULL || l->head == NULL || l->head->next_node == NULL) {
+    if (l == NULL || list_head(l) == NULL || list_next(list_head(l)) == NULL) {
         return; 
     }
 
-    struct node *current = l->head->next_node; 
+    struct node *current = list_next(list_head(l)); 
 
     while (current != NULL) {
-        struct node *prev = current->prev_node;
+        struct node *prev = list_prev(l, current);
         int current_value = list_node_get_value(current);
 
         while (prev != NULL && list_node_get_value(prev) < current_value) {
             list_unlink_node(l, current);
+            list_insert_before(l, current, prev);
             
-            if (prev->prev_node == NULL) {
-                l->head->next_node = current;
-                current->prev_node = NULL;
-            } else {
-                list_insert_before(l, current, prev);
-            }
-            
-            prev = prev->prev_node;
+            prev = list_prev(l, prev);
         }
 
-        current = current->next_node; 
+        current = list_next(current); 
     }
 }
 
