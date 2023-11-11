@@ -3,6 +3,10 @@
         "array": "c",
         "string_view": "c",
         "initializer_list": "c",
-        "utility": "c"
+        "utility": "c",
+        "list.h": "c",
+        "memory": "c",
+        "functional": "c",
+        "tuple": "c"
     }
 }

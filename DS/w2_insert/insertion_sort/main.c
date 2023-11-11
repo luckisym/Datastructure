@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "list.h"
+#include "mysort.c"
 #define BUF_SIZE 1024
 
 char buf[BUF_SIZE];
@@ -51,20 +52,50 @@ int parse_options(struct config *cfg, int argc, char *argv[]) {
     return 0;
 }
 
+void print_list(struct list *l) {
+    struct node *current = list_head(l);
+    while (current != NULL) {
+        printf("%d\n", list_node_get_value(current));
+        current = list_next(current);
+    }
+}
+
 int main(int argc, char *argv[]) {
     struct config cfg;
     if (parse_options(&cfg, argc, argv) != 0) {
         return 1;
     }
 
-    /* SOME CODE MISSING HERE */
+    struct list *mylist = list_init();
 
     while (fgets(buf, BUF_SIZE, stdin)) {
+        int value;
+        sscanf(buf, "%d", &value);
 
-        /* SOME CODE MISSING HERE */
+        // Additional operations based on command line options
+        if (cfg.remove_odd && value % 2 != 0) {
+            // Skip odd numbers
+            continue;
+        }
+
+        struct node *n = list_new_node(value); 
+        list_add_back(mylist, n);
     }
 
-    /* SOME CODE MISSING HERE */
+    // Sort the list based on command-line options
+    if (cfg.combine) {
+        if (cfg.descending_order) {
+            sort_descending(&mylist);
+        } else {
+            sort_ascending(&mylist);
+        }
+    }
+
+    // Print the sorted list
+    print_list(mylist);
+
+    // Free the memory used by the list
+    list_cleanup(mylist);
 
     return 0;
 }

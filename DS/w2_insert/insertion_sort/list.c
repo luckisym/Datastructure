@@ -144,6 +144,7 @@ int list_node_set_value(struct node *n, int value) {
     }
 
     n->item = value; 
+    return 0; 
 }
 
 int list_unlink_node(struct list *l, struct node *n) {
@@ -276,7 +277,7 @@ size_t list_length(const struct list *l) {
 }
 
 struct node *list_get_ith(const struct list *l, size_t i) {
-    if (l== NULL || i < 0 || l->length < i) {
+    if (l== NULL || l->length < i) {
         return NULL; 
     }
 
@@ -295,7 +296,9 @@ struct list *list_cut_after(struct list *l, struct node *n) {
     if (l == NULL || n == NULL || !list_node_present(l, n)) {
         return NULL; 
     }
-    
+
+    size_t count = 0; 
+
     struct list *second_l = list_init(); 
     if (second_l == NULL) {
         return NULL; 
@@ -316,9 +319,10 @@ struct list *list_cut_after(struct list *l, struct node *n) {
         list_unlink_node(l, current);
         list_free_node(current); 
         current = temp;  
+        count++; 
     }
 
-
+    l->length -= count; 
     n->next_node = NULL; 
     return second_l; 
 }
