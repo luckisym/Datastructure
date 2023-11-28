@@ -1,21 +1,14 @@
-#include "list.h"
+/* Name: Saleeman Mahamud
+ * Student Number: 14932458
+ * Education: Computer Science 
+ * 
+ * This file defines a simple doubly linked list data structure and provides basic operations to 
+ * manipulate the list. The list consists of nodes, where each node contains an integer item,
+ * a pointer to the next node, and a pointer to the previous node.
+ * The list is initialized with a head pointer pointing to the first node.
+*/
 
-/*
- * TODO: A lot of code missing here. You will need to add implementations for
- * all the functions described in list.h here.
- *
- * Start by adding the definitions for the list and node structs. You may
- * implement any of the Linked List versions discussed in the lecture, which
- * have some different trade-offs for the functions you will need to write.
- *
- * Note: The function prototypes in list.h assume the most basic Singly Linked
- * List. If you implement some other version, you may not need all of the function
- * arguments for all of the described functions. This will produce a warning,
- * which you can suppress by adding a simple if-statement to check the value
- * of the unused parameter.
- *
- * Also, do not forget to add any required includes at the top of your file.
- */
+#include "list.h"
 
 struct node {
     int item;
@@ -24,7 +17,6 @@ struct node {
 };
 
 struct list {
-    size_t length; 
     struct node *head;
 };
 
@@ -35,7 +27,6 @@ struct list *list_init(void) {
         return NULL; 
     }
 
-    l->length = 0; 
     l->head = NULL; 
 
     return l; 
@@ -51,12 +42,11 @@ struct node *list_new_node(int num) {
     n->next_node = NULL; 
     n->prev_node = NULL; 
 
-    
     return n; 
 }
 
 struct node *list_head(const struct list *l) {
-    return (l->head != NULL) ? l->head : NULL;  
+    return (l != NULL && l->head != NULL) ? l->head : NULL;  
 }
 
 struct node *list_next(const struct node *n) {
@@ -64,11 +54,7 @@ struct node *list_next(const struct node *n) {
 }
 
 int list_add_front(struct list *l, struct node *n) {
-    if (l == NULL) {
-        return 1; 
-    }
-
-    if (n == NULL) {
+    if (l == NULL || n == NULL) {
         return 1; 
     }
     
@@ -80,9 +66,7 @@ int list_add_front(struct list *l, struct node *n) {
         l->head = n; 
     }
 
-    l->length++; 
     return 0; 
-
 }
 
 struct node *list_tail(const struct list *l) {
@@ -101,14 +85,7 @@ struct node *list_tail(const struct list *l) {
 
 
 struct node *list_prev(const struct list *l, const struct node *n) {
-    if (l == NULL || n == NULL || !list_node_present(l, n)) {
-        return NULL; 
-    }
-    
-    if (n == l->head) {
-        return NULL;
-    }
-    return n->prev_node; 
+    return (l != NULL && n != NULL && list_node_present(l, n) && n != l->head) ? n->prev_node : NULL; 
 }
 
 
@@ -124,18 +101,13 @@ int list_add_back(struct list *l, struct node *n) {
         last_node->next_node = n; 
         n->prev_node = last_node;
     }
-
-    l->length++; 
+ 
     return 0; 
 }
 
 
 int list_node_get_value(const struct node *n) {
-    if (n == NULL) {
-        return 0; 
-    }
-
-    return n->item; 
+    return (n != NULL) ? n->item : -1; 
 }
 
 int list_node_set_value(struct node *n, int value) {
@@ -180,10 +152,6 @@ int list_unlink_node(struct list *l, struct node *n) {
 
     n->next_node = NULL;
     n->prev_node = NULL;
-
-    if (l->length > 0) {
-        l->length--; 
-    }
     
     return 0;
 }
@@ -202,11 +170,11 @@ int list_cleanup(struct list *l) {
     }
 
     struct node *current = l->head;
-    struct node *next;
+    struct node *next = l->head; 
 
     while (current != NULL) {
         next = current->next_node;
-        free(current);
+        list_free_node(current); 
         current = next;
     }
 
@@ -226,7 +194,6 @@ int list_node_present(const struct list *l, const struct node *n) {
         if (temp == n) {
             return 1;
         }
-
         temp = temp->next_node;
     }
 
@@ -273,16 +240,28 @@ int list_insert_before(struct list *l, struct node *n, struct node *m) {
 }
 
 size_t list_length(const struct list *l) {
-    return (l != NULL) ? l->length : 0; 
+    if (l == NULL) {
+        return 0; 
+    }
+    
+    size_t length = 0; 
+    struct node *temp = l->head;
+
+    while (temp != NULL) {
+        length++; 
+        temp = temp->next_node;
+    }
+
+    return length; 
 }
 
 struct node *list_get_ith(const struct list *l, size_t i) {
-    if (l== NULL || l->length < i) {
+    if (l== NULL || list_length(l) < i) {
         return NULL; 
     }
 
     struct node *current = l->head; 
-    for (size_t i_loop = 0; i_loop < l->length; i_loop++) {
+    for (size_t i_loop = 0; i_loop < list_length(l); i_loop++) {
         if (i == i_loop) {
             return current; 
         }
@@ -293,38 +272,19 @@ struct node *list_get_ith(const struct list *l, size_t i) {
 }
 
 struct list *list_cut_after(struct list *l, struct node *n) {
-    if (l == NULL || n == NULL || !list_node_present(l, n)) {
-        return NULL; 
+    if (l == NULL || n == NULL || n->next_node == NULL) {
+        return NULL;
     }
 
-    size_t count = 0; 
-
-    struct list *second_l = list_init(); 
-    if (second_l == NULL) {
-        return NULL; 
-    }
-    
-    struct node *current = n->next_node; 
-    struct node *temp = n->next_node;
-
-    while (current != NULL) {
-        struct node *new_node = list_new_node(list_node_get_value(current));
-        if (new_node == NULL) {
-            list_cleanup(second_l);
-            return NULL;
-        }
-
-        list_add_back(second_l, new_node); 
-        temp = current->next_node;  
-        list_unlink_node(l, current);
-        list_free_node(current); 
-        current = temp;  
-        count++; 
+    struct list *second_half = (struct list *)malloc(sizeof(struct list));
+    if (second_half == NULL) {
+        return NULL;
     }
 
-    l->length -= count; 
-    n->next_node = NULL; 
-    return second_l; 
+    second_half->head = n->next_node;
+    n->next_node = NULL;
+
+    return second_half;
 }
 
 

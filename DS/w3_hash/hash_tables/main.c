@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <stdint.h>
+#include <stddef.h>
 
 #include "array.h"
 #include "hash_func.h"
@@ -12,21 +14,23 @@
 
 #define TABLE_START_SIZE 256
 #define MAX_LOAD_FACTOR 0.6
-#define HASH_FUNCTION hash_too_simple
+#define HASH_FUNCTION hash_fletcher
 
 #define START_TESTS 2
 #define MAX_TESTS 2
-#define HASH_TESTS 1
+#define HASH_TESTS 4
 
-/* Replace every non-ascii char with a space and lowercase every char. */
-static void cleanup_string(char *line) {
-    for (char *c = line; *c != '\0'; c++) {
-        *c = (char) tolower(*c);
-        if (!isalpha(*c)) {
-            *c = ' ';
+void cleanup_string(char *line) {
+    for (char *c = line; *c; ++c) {
+        if (*c == '\'') {
+            *c = '\0';
+        } else {
+            *c = isalpha(*c) ? tolower(*c) : ' ';
         }
     }
 }
+
+
 
 /* Return a pointer to a heap allocated string with all the characters we
  * use as word delimiters. Return NULL on failure. */
@@ -64,15 +68,28 @@ static struct table *create_from_file(char *filename,
         return NULL;
     }
 
-    /* ... SOME CODE MISSING HERE ... */
-    struct table *hash_table = NULL;
+    struct table *hash_table = table_init(start_size, max_load, hash_func);
+    if (hash_table == NULL) {
+        fclose(fp);
+        free(line);
+        return NULL;
+    }
+
+    int line_number = 0;
 
     while (fgets(line, LINE_LENGTH, fp)) {
-        /* ... SOME CODE MISSING HERE ... */
+        line_number++;
+        cleanup_string(line);
+        char *token = strtok(line, " \t\n");
+
+        while (token != NULL && token != ' ') {
+            table_insert(hash_table, token, line_number);
+            token = strtok(NULL, " \t\n");
+        }
     }
+
     fclose(fp);
     free(line);
-
     return hash_table;
 }
 
@@ -85,8 +102,23 @@ static int stdin_lookup(struct table *hash_table) {
     }
 
     while (fgets(line, LINE_LENGTH, stdin)) {
-        /* ... SOME CODE MISSING HERE ... */
+        cleanup_string(line);
+        char *token = strtok(line, " \t\n");
+        printf("%s\n", token);
+
+        while (token != NULL) {
+            struct array *values = table_lookup(hash_table, token);
+            if (values != NULL) {
+                for (size_t i = 0; i < array_size(values); ++i) {
+                    printf("* %d\n", array_get(values, i));
+                }
+                printf("\n");
+            }
+
+            token = strtok(NULL, " \t\n");
+        }
     }
+
     free(line);
     return 0;
 }
@@ -100,7 +132,7 @@ static void timed_construction(char *filename) {
      * at the top of the file too, to change the size of the arrays. */
     unsigned long start_sizes[START_TESTS] = { 2, 65536 };
     double max_loads[MAX_TESTS] = { 0.2, 1.0 };
-    unsigned long (*hash_funcs[HASH_TESTS])(const unsigned char *) = { hash_too_simple };
+    unsigned long (*hash_funcs[HASH_TESTS])(const unsigned char *) = { hash_too_simple, hash_fletcher, hash_adler, hash_murmur };
 
     for (int i = 0; i < START_TESTS; i++) {
         for (int j = 0; j < MAX_TESTS; j++) {

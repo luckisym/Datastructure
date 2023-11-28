@@ -7,6 +7,7 @@
         "list.h": "c",
         "memory": "c",
         "functional": "c",
-        "tuple": "c"
+        "tuple": "c",
+        "hash_func.h": "c"
     }
 }

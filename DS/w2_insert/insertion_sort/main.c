@@ -1,31 +1,129 @@
+/* Name: Saleeman Mahamud
+ * Student Number: 14932458
+ * Education: Computer Science 
+ * 
+ * This program reads integer values from stdin, performs various sorting operations on a linked 
+ * list, and outputs the sorted list based on the specified command-line options.
+ * - Command type: -d, Sort Type: Descending Order
+ * - Command type: -c, Sort Type: Combine Adjacent Nodes
+ * - Command type: -o, Sort Type: Remove Odd Numbers
+ * - Command type: -z, Sort Type: Zip Alternating Nodes
+ */
+
 #include <getopt.h>
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "list.h"
-#include "mysort.h"
+
 #define BUF_SIZE 1024
 
 char buf[BUF_SIZE];
 
 struct config {
-    /* You can ignore these options until you implement the
-       extra command-line arguments. */
-
-    /* Set to 1 if -d is specified, 0 otherwise. */
     int descending_order;
-
-    // Set to 1 if -c is specified, 0 otherwise.
     int combine;
-
-    // Set to 1 if -o is specified, 0 otherwise.
     int remove_odd;
-
-    /* Set to 1 if -z is specified, 0 otherwise. */
     int zip_alternating;
 };
+
+/* Sorts the list using insertion sort.
+ * in: 
+ *  - l: the list
+ *  - descending: true or false depending on the type of sort you want
+ * 
+ * side effect: 
+ *  - changes the list
+*/
+void sort_list(struct list *l, int descending) {
+    if (l == NULL || list_head(l) == NULL || list_next(list_head(l)) == NULL) {
+        return; 
+    }
+
+    struct node *current = list_next(list_head(l)); 
+
+    while (current != NULL) {
+        struct node *prev = list_prev(l, current);
+        int current_value = list_node_get_value(current);
+
+        while (
+            (descending && prev != NULL && list_node_get_value(prev) < current_value) ||
+            (!descending && prev != NULL && list_node_get_value(prev) > current_value)
+        ) {
+            list_unlink_node(l, current);
+            list_insert_before(l, current, prev);
+            prev = list_prev(l, current);
+        }
+        
+        current = list_next(current);
+    }
+}
+
+/* Combines adjacent nodes in the list by adding their values.
+ * in: 
+ *  - l: the list
+ * 
+ * side effect: 
+ *  - changes the list
+*/
+void pair_list(struct list *l) {
+    if (l == NULL || list_head(l) == NULL) {
+        return;
+    }
+
+    struct node *current = list_head(l);
+
+    while (current != NULL) {
+        struct node *next = list_next(current);
+        if (next == NULL) {
+            break;
+        }
+
+        int current_value = list_node_get_value(current);
+        int next_value = list_node_get_value(next);
+
+        list_unlink_node(l, current);
+        list_free_node(current);
+
+        list_node_set_value(next, (current_value + next_value));
+        current = list_next(next);
+    }
+}
+
+/* Cuts the list in half and combines corresponding nodes from both halves.
+ * in: 
+ *  - l: the list
+ * 
+ * side effect: 
+ *  - changes the list
+*/
+void cut_and_combine(struct list *l) {
+    size_t l_length = list_length(l); 
+    if ( l_length <= 2) {
+        return; 
+    }
+
+    size_t cut_index = (l_length % 2 == 0) ? l_length / 2 : (l_length + 1) / 2;
+    
+    struct node *nn = list_get_ith(l, cut_index - 1);
+    struct list *new_l = list_cut_after(l, nn);
+    struct node *n_new = list_head(new_l);
+    struct node *temp = n_new;
+    struct node *n = list_head(l);
+
+    for (size_t i = 0; i < cut_index; i++) {
+        temp = list_next(n_new);
+
+        list_unlink_node(new_l, n_new);
+        list_insert_after(l, n_new, n);
+
+        n_new = temp;
+        n = list_next(list_next(n)); 
+    }
+
+    list_cleanup(new_l);
+}
 
 int parse_options(struct config *cfg, int argc, char *argv[]) {
     memset(cfg, 0, sizeof(struct config));
@@ -52,6 +150,13 @@ int parse_options(struct config *cfg, int argc, char *argv[]) {
     return 0;
 }
 
+/* Prints the values of nodes in the list.
+ * in: 
+ *  - l: the list
+ * 
+ * side effect: 
+ *  - Prints the values of the nodes
+*/
 void print_list(struct list *l) {
     struct node *current = list_head(l);
     while (current != NULL) {
@@ -66,37 +171,41 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    struct list *mylist = list_init();
-
-    while (fgets(buf, BUF_SIZE, stdin)) {
-        int value;
-        sscanf(buf, "%d", &value);
-
-        // // Additional operations based on command line options
-        // if (cfg.remove_odd && value % 2 != 0) {
-        //     // Skip odd numbers
-        //     continue;
-        // }
-
-        struct node *n = list_new_node(value); 
-        list_add_back(mylist, n);
+    struct list *l = list_init(); 
+    int passed = 0; 
+    while (fgets(buf, BUF_SIZE, stdin) != NULL) {
+        char *token = strtok(buf, " \t\n");
+        while (token != NULL) {
+            passed = 1; 
+            int value = atoi(token);
+            
+            if (!cfg.remove_odd || (cfg.remove_odd && value % 2 == 0)) {
+                struct node *n = list_new_node(value);
+                list_add_back(l, n);
+            }
+    
+            token = strtok(NULL, " \t\n");
+        }
     }
 
-    // Sort the list based on command-line options
+    if (!passed) {
+        list_cleanup(l); 
+        return 0; 
+    }
+    
+    sort_list(l, cfg.descending_order);
+
     if (cfg.combine) {
-        if (cfg.descending_order) {
-            sort_descending(mylist);
-        } 
-        //else {
-        //     sort_ascending(&mylist);
-        // }
+        pair_list(l); 
+    } 
+    
+    if (cfg.zip_alternating) {
+        cut_and_combine(l); 
     }
+    
+    print_list(l);
 
-    // Print the sorted list
-    print_list(mylist);
-
-    // Free the memory used by the list
-    list_cleanup(mylist);
-
+    list_cleanup(l); 
     return 0;
 }
+

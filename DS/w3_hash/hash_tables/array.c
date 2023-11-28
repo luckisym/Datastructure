@@ -16,6 +16,7 @@ struct array *array_init(unsigned long initial_capacity) {
 
     a->array = (int *)malloc(sizeof(int) * initial_capacity);
     if (a->array == NULL) {
+        free(a);
         return NULL;
     }
 
@@ -35,11 +36,7 @@ void array_cleanup(struct array *a) {
 }
 
 int array_get(const struct array *a, unsigned long index) {
-    if (a == NULL || a->array_size <= index) {
-        return -1;
-    }
-
-    return a->array[index];
+    return (a != NULL && array_size(a) >= index) ? a->array[index] : -1;
 }
 
 /* Note: Although this operation might require the array to be resized and
@@ -48,18 +45,26 @@ int array_get(const struct array *a, unsigned long index) {
  * Make sure your code is implemented in such a way to guarantee this. */
 int array_append(struct array *a, int elem) {
     if (a == NULL) {
-        return 0;
+        return 1;
     }
 
-    if (a->array_size >= a->curr_capacity) {
-        a->array = (int *)realloc(a->array, sizeof(int) * (a->curr_capacity * 2));
+    if (array_size(a) >= a->curr_capacity) {
+        a->curr_capacity *= 2;
+
+        int *new_pointer = (int *)realloc(a->array, sizeof(int) * a->curr_capacity);
+        if (new_pointer == NULL) {
+        return 1;
+        }
+
+        a->array = new_pointer;
     }
 
     a->array[a->array_size] = elem;
+    a->array_size++;
 
-    return 1;
+    return 0;
 }
 
 unsigned long array_size(const struct array *a) {
-    /* ... SOME CODE MISSING HERE ... */
+    return (a != NULL) ? a->array_size : 0;
 }
