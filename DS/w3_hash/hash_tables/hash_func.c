@@ -1,3 +1,16 @@
+/*
+ * Author: Saleeman Mahamud
+ * Student number: 14932458
+ * Study: Computer Science
+ *
+ * This file contains implementations of various hash functions for testing performance.
+ * The included hash functions are:
+ *   - hash_too_simple: A simple hash function
+ *   - murmur3_32: Implementation of the MurmurHash3 algorithm for 32-bit hash values.
+ *   - adler32: Implementation of the Adler-32 checksum algorithm.
+ *   - Fletcher16: Implementation of the Fletcher-16 checksum algorithm.
+ */
+
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -43,7 +56,7 @@ uint32_t murmur3_32(const unsigned char* key, size_t len) {
     h ^= murmur_32_scramble(k);
 
     /* Finalize. */
-    h ^= len;
+    h ^= (uint32_t) len;
     h ^= (h >> 16);
     h *= 0x85ebca6b;
     h ^= (h >> 13);
@@ -64,7 +77,7 @@ uint32_t adler32(const unsigned char *data, size_t len) {
         sum2 = (sum2 + sum1) % MOD_ADLER;
     }
 
-    return (sum2 << 16) | sum1;
+    return (uint32_t)((sum2 << 16) | sum1);
 }
 
 uint16_t Fletcher16( const unsigned char *data, size_t count ) {
@@ -73,8 +86,8 @@ uint16_t Fletcher16( const unsigned char *data, size_t count ) {
    size_t index;
 
    for (index = 0; index < count; ++index) {
-      sum1 = (sum1 + data[index]) % 255;
-      sum2 = (sum2 + sum1) % 255;
+       sum1 = (uint16_t)((sum1 + data[index]) % 255);
+       sum2 = (uint16_t)((sum2 + sum1) % 255);
    }
 
    return (sum2 << 8) | sum1;

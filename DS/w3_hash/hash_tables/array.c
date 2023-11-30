@@ -1,3 +1,13 @@
+/**
+ * Author: Saleeman Mahamud
+ * Student Number: 14932458
+ * Study: Computer Science
+ *
+ * This file contains the declaration of a dynamic array structure for
+ * integers and functions to manipulate the array, such as initialization,
+ * cleanup, element retrieval, appending, and size inquiry.
+ */
+
 #include <stdlib.h>
 
 #include "array.h"

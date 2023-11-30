@@ -1,3 +1,14 @@
+/**
+ * Author: Saleeman Mahamud
+ * Student number: 14932458
+ * Study: Computer Science
+ *
+ * This file contains the main program for testing the hash table implementation.
+ * It includes functions for cleaning up strings, creating a hash table from a file,
+ * performing lookups, and measuring the time it takes to construct a hash table with
+ * various parameters.
+ */
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,36 +31,43 @@
 #define MAX_TESTS 2
 #define HASH_TESTS 4
 
+/** This function modifies a given string by removing single quotes and converting
+ * all alphabetic characters to lowercase and converting all non-alphabetic to a space.
+ *
+ * in:
+ *  - line: A pointer to the string that needs to be cleaned up.
+ *
+ * side-effect:
+ *  - changes the given string
+ */
 void cleanup_string(char *line) {
     for (char *c = line; *c; ++c) {
         if (*c == '\'') {
             *c = '\0';
         } else {
-            *c = isalpha(*c) ? tolower(*c) : ' ';
+            *c = isalpha(*c) ? (char)tolower(*c) : ' ';
         }
     }
 }
 
+// /* Return a pointer to a heap allocated string with all the characters we
+//  * use as word delimiters. Return NULL on failure. */
+// static char *calc_delim(void) {
+//     const size_t ascii_table_size = 128;
+//     char *res = malloc(sizeof(char) * ascii_table_size);
+//     if (!res) {
+//         return NULL;
+//     }
 
-
-/* Return a pointer to a heap allocated string with all the characters we
- * use as word delimiters. Return NULL on failure. */
-static char *calc_delim(void) {
-    const size_t ascii_table_size = 128;
-    char *res = malloc(sizeof(char) * ascii_table_size);
-    if (!res) {
-        return NULL;
-    }
-
-    int res_index = 0;
-    for (unsigned char c = 1; c < ascii_table_size; c++) {
-        if (!isalpha(c)) {   /* if it's not an alpha it's a delimiter char. */
-            res[res_index++] = (char) c;
-        }
-    }
-    res[res_index] = '\0';
-    return res;
-}
+//     int res_index = 0;
+//     for (unsigned char c = 1; c < ascii_table_size; c++) {
+//         if (!isalpha(c)) {   /* if it's not an alpha it's a delimiter char. */
+//             res[res_index++] = (char) c;
+//         }
+//     }
+//     res[res_index] = '\0';
+//     return res;
+// }
 
 /* Creates a hash table with a word index for the specified file and
  * parameters. Return a pointer to hash table or NULL if an error occured.
@@ -82,7 +100,7 @@ static struct table *create_from_file(char *filename,
         cleanup_string(line);
         char *token = strtok(line, " \t\n");
 
-        while (token != NULL && token != ' ') {
+        while (token != NULL) {
             table_insert(hash_table, token, line_number);
             token = strtok(NULL, " \t\n");
         }
@@ -112,6 +130,9 @@ static int stdin_lookup(struct table *hash_table) {
                 for (size_t i = 0; i < array_size(values); ++i) {
                     printf("* %d\n", array_get(values, i));
                 }
+
+                printf("\n");
+            } else {
                 printf("\n");
             }
 
@@ -132,7 +153,9 @@ static void timed_construction(char *filename) {
      * at the top of the file too, to change the size of the arrays. */
     unsigned long start_sizes[START_TESTS] = { 2, 65536 };
     double max_loads[MAX_TESTS] = { 0.2, 1.0 };
-    unsigned long (*hash_funcs[HASH_TESTS])(const unsigned char *) = { hash_too_simple, hash_fletcher, hash_adler, hash_murmur };
+    unsigned long (*hash_funcs[HASH_TESTS])(const unsigned char *) = { hash_too_simple,
+                                                                       hash_fletcher, hash_adler,
+                                                                       hash_murmur };
 
     for (int i = 0; i < START_TESTS; i++) {
         for (int j = 0; j < MAX_TESTS; j++) {

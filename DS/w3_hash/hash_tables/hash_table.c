@@ -1,3 +1,15 @@
+/**
+ * Author: Saleeman Mahamud
+ * Student Number: 14932458
+ * Study: Computer Science
+ *
+ * This file contains the implementation of a hash table that uses separate
+ * chaining for collision resolution. The hash table stores key-value pairs,
+ * where the keys are strings, and the values are dynamic arrays of integers.
+ * The hash table is dynamically resized when the load factor exceeds a specified
+ * maximum load factor.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,6 +17,9 @@
 
 #include "array.h"
 #include "hash_table.h"
+
+#define VALUE_INIT_SIZE 100
+#define TABLE_RESIZE_FACTOR 2
 
 struct table {
     /* The (simple) array used to index the table */
@@ -53,7 +68,7 @@ struct node *node_init(const char *key) {
         return NULL;
     }
 
-    n->value = array_init(100);
+    n->value = array_init(VALUE_INIT_SIZE);
     if (n->value == NULL) {
         free(n->key);
         free(n);
@@ -127,35 +142,6 @@ int table_resize(struct table *t, unsigned long capacity) {
     return 1;
 }
 
-/* Finds a node with the given key in the provided table.
- *
- * in:
- * - t: Pointer to the table in which to search for the node.
- * - key: The key to search for in the table.
- *
- * out:
- * - Returns a pointer to the found node, or NULL if the node is not found or if the
- *   table pointer is NULL.
- */
-struct node *table_find_node(const struct table *t, const char *key) {
-    if (t == NULL) {
-        return NULL;
-    }
-
-    unsigned long index = t->hash_func((const unsigned char *)key) % t->capacity;
-    struct node *current_node = t->array[index];
-
-    while (current_node) {
-        if (strcmp(current_node->key, key) == 0) {
-            return current_node;
-        }
-
-        current_node = current_node->next;
-    }
-
-    return NULL;
-}
-
 int table_insert(struct table *t, const char *key, int value) {
     if (t == NULL) {
         return 1;
@@ -163,14 +149,14 @@ int table_insert(struct table *t, const char *key, int value) {
 
     // Resize the table if the max load factor is hit
     if (table_load_factor(t) >= t->max_load_factor) {
-        if (!table_resize(t, t->capacity * 2)) {
+        if (!table_resize(t, t->capacity * TABLE_RESIZE_FACTOR)) {
             return 1;
         }
     }
 
-    struct node *n = table_find_node(t, key);
-    if (n != NULL) {
-        return (!array_append(n->value, value)) ? 0 : 1;
+    struct array *a = table_lookup(t, key);
+    if (a != NULL) {
+        return (!array_append(a, value)) ? 0 : 1;
     }
 
     // Node not found, make a new one
@@ -189,18 +175,23 @@ int table_insert(struct table *t, const char *key, int value) {
     return 0;
 }
 
-
 struct array *table_lookup(const struct table *t, const char *key) {
     if (t == NULL) {
         return NULL;
     }
 
-    struct node *n = table_find_node(t, key);
-    if (n == NULL) {
-        return NULL;
+    unsigned long index = t->hash_func((const unsigned char *)key) % t->capacity;
+    struct node *current_node = t->array[index];
+
+    while (current_node) {
+        if (strcmp(current_node->key, key) == 0) {
+            return current_node->value;
+        }
+
+        current_node = current_node->next;
     }
 
-    return n->value;
+    return NULL;
 }
 
 double table_load_factor(const struct table *t) {
@@ -209,7 +200,7 @@ double table_load_factor(const struct table *t) {
 
 /* Cleans up the memory associated with a node, including its key and value.
  *
- * Input:
+ * in:
  * - n: Pointer to the node to be cleaned up. If NULL, no action is taken.
  */
 void node_cleanup(struct node *n) {
@@ -227,13 +218,7 @@ int table_delete(struct table *t, const char *key) {
         return -1;
     }
 
-    struct node *node_to_delete = table_find_node(t, key);
-    if (node_to_delete == NULL) {
-        return 1;
-    }
-
     unsigned long index = t->hash_func((const unsigned char *)key) % t->capacity;
-
     struct node *current = t->array[index];
     struct node *prev = NULL;
 
@@ -245,7 +230,7 @@ int table_delete(struct table *t, const char *key) {
                 prev->next = current->next;
             }
 
-            node_cleanup(node_to_delete);
+            node_cleanup(current);
             t->load--;
             return 0;
         }
@@ -268,6 +253,7 @@ void table_cleanup(struct table *t) {
 
         while (curr_node != NULL) {
             struct node *temp_node = curr_node->next;
+
             node_cleanup(curr_node);
             curr_node = temp_node;
         }
