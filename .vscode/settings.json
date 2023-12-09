@@ -8,6 +8,13 @@
         "memory": "c",
         "functional": "c",
         "tuple": "c",
-        "hash_func.h": "c"
+        "hash_func.h": "c",
+        "*.tcc": "c",
+        "random": "c",
+        "new": "c",
+        "ostream": "c",
+        "streambuf": "c",
+        "type_traits": "c",
+        "stdlib.h": "c"
     }
 }
