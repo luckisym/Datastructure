@@ -1,3 +1,14 @@
+/**Author: Saleeman Mahamud
+ * Student Number: 14932458
+ * Study: Computer Science
+ * 
+ * This file contains the implementation of a binary search tree (BST) data structure
+ * and related operations such as insertion, removal, printing, and cleanup. The BST
+ * is implemented using nodes with left and right children, suitable for organizing
+ * data in a hierarchical order. The file also includes functions for generating DOT
+ * representation of the tree.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,8 +26,6 @@ struct node {
     int data;
     struct node *left_child;
     struct node *right_child;
-
-    /* ... SOME CODE MISSING HERE ... */
 };
 typedef struct node node;
 
@@ -125,6 +134,17 @@ int tree_insert(struct tree *tree, int data) {
     }
 }
 
+/** This recursive function traverses the binary tree rooted at the given parent
+ * node in a depth-first manner to determine if a node with the specified data
+ * value exists. If the data value is found in the tree, the function returns 1;
+ * otherwise, it returns 0.
+ *
+ * in:
+ *  - parent Pointer to the root of the subtree or NULL for an empty subtree.
+ *  - data The data value to search for in the binary tree.
+ * out:
+ *  - 1 if the data value is found, 0 otherwise.
+ */
 static int recursive_lookup(struct node *parent, int data) {
     if (parent == NULL) {
         return 0;
@@ -148,68 +168,113 @@ int tree_find(struct tree *tree, int data) {
     return recursive_lookup(tree->root, data);
 }
 
-static void handle_node_deletion(struct node *parent, struct node *n) {
-    struct node *left_child = (n->left_child != NULL) ? n->left_child : NULL;
-    struct node *right_child = (n->right_child != NULL) ? n->right_child : NULL;
-
-    if (left_child == NULL && right_child == NULL) {
-        if (parent->left_child == n) {
-            parent->left_child = NULL;
+void handle_deletion(struct tree *tree, struct node *current, struct node *parent) {
+    if (current->left_child == NULL) {
+        if (parent == NULL) {
+            tree->root = current->right_child;
+        } else if (parent->left_child == current) {
+            parent->left_child = current->right_child;
         } else {
-            parent->right_child = NULL;
+            parent->right_child = current->right_child;
         }
-
-        free(n);
-    } else if(left_child != NULL && right_child != NULL) {
-
+        free(current);
+    } else if (current->right_child == NULL) {
+        if (parent == NULL) {
+            tree->root = current->left_child;
+        } else if (parent->left_child == current) {
+            parent->left_child = current->left_child;
+        } else {
+            parent->right_child = current->left_child;
+        }
+        free(current);
     } else {
-        struct node *child = (left_child != NULL) ? left_child : right_child;
-        if (parent->left_child == n) {
-            parent->left_child = child;
-        } else {
-            parent->right_child = child;
+        // Node with two children, find the in-order successor
+        node *left_child = current->right_child;
+        parent = current;
+
+        while (left_child->left_child != NULL) {
+            parent = left_child;
+            left_child = left_child->left_child;
         }
 
-        free(n);
+        // Copy the in-order successor's data to the current node
+        current->data = left_child->data;
+
+        // Remove the in-order successor (it has at most one child)
+        if (parent->left_child == left_child) {
+            parent->left_child = left_child->right_child;
+        } else {
+            parent->right_child = left_child->right_child;
+        }
+
+        free(left_child);
     }
 }
+
 int tree_remove(struct tree *tree, int data) {
-    if (tree == NULL || !tree_find(tree, data)) {
-        return 1;
+    if (tree == NULL || tree->root == NULL) {
+        return 1;  
     }
 
-    if (tree->root->data == data) {
-        free(tree->root);
-        tree->root = NULL;
-        return 0;
-    }
+    node *current = tree->root;
+    node *parent = NULL;
 
-    struct node *parent = tree->root;
-    struct node *prev = NULL;
-    struct node *temp = NULL;
-
-    while (1) {
-        temp = parent;
-
-        if (parent->data == data) {
-            handle_node_deletion(prev, parent);
-            return 0;
+    // Search for the node to be removed
+    while (current != NULL && current->data != data) {
+        parent = current;
+        if (data < current->data) {
+            current = current->left_child;
+        } else {
+            current = current->right_child;
         }
-
-        if (parent->data > data && parent->left_child != NULL) {
-            parent = parent->left_child;
-        }else if (parent->data < data && parent->right_child != NULL) {
-            parent = parent->right_child;
-        }
-
-        prev = temp;
     }
+
+    if (current == NULL) {
+        return 1; 
+    }
+
+    handle_deletion(tree, current, parent);
+
+    return 0;  
+}
+
+
+/** This recursive function traverses the binary tree rooted at the given parent
+ * node in an in-order fashion. It prints the data of each visited node to the
+ * standard output, effectively displaying the nodes in ascending order if the
+ * tree is a binary search tree (BST).
+ *
+ * in: 
+ *  - parent: Pointer to the root of the subtree or NULL for an empty subtree.
+ */
+static void in_order_traversal(node *parent) {
+    if (parent == NULL) {
+        return;
+    }
+
+    in_order_traversal(parent->left_child);
+    printf("%d\n", parent->data);
+    in_order_traversal(parent->right_child);
+    
 }
 
 void tree_print(const struct tree *tree) {
-    /* ... SOME CODE MISSING HERE ... */
+    if (tree == NULL || tree->root == NULL) {
+        return;
+    } 
+    
+    in_order_traversal(tree->root);
 }
 
+
+/** This recursive function traverses the binary tree rooted at the given parent
+ * node and deallocates the memory occupied by each node. It performs a post-order
+ * traversal, ensuring that child nodes are freed before their parent. The function
+ * is suitable for cleaning up the entire tree, releasing all allocated memory.
+ *
+ * in:
+ *  - parent: Pointer to the root of the subtree or NULL for an empty subtree.
+ */
 static void recursive_node_cleanup(struct node *parent) {
     if (parent == NULL) {
         return;
